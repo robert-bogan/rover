@@ -6,13 +6,15 @@ export config_name="demo"
 function execute_walkthrough {
   clone_landing_zones
 
-  clone_configurations
+  clone_templates
 
-  select_walkthrough_config
+  generate_config
 
-  generate_walkthrough_assets
+  # select_walkthrough_config
 
-  execute_deployments
+  # generate_walkthrough_assets
+
+  # execute_deployments
 }
 
 function clone_landing_zones {
@@ -53,10 +55,9 @@ function clone_landing_zones {
   echo_section_break
 }
 
-function clone_configurations {
+function clone_templates {
   echo ""
-  echo "Step 2 - Download the configuration repository. These contain terraform configuration files for the solution"
-  echo "sets you want to create and are organized by levels for the proper enterprise seperation of concerns."
+  echo "Step 2 - Download Ansible templates for enterprise scale solution configuration creation."
   echo ""
   echo "Learn more about levels"
   echo " - https://github.com/Azure/caf-terraform-landingzones/blob/master/documentation/code_architecture/hierarchy.md"
@@ -71,14 +72,40 @@ function clone_configurations {
   read proceed
   check_exit_case $proceed
 
-  set_clone_exports "${walkthrough_path}/configuration" "/configuration" "2" "Azure/caf-terraform-landingzones-starter" "starter"
+  # set_clone_exports "${walkthrough_path}/configuration" "/configuration" "2" "Azure/caf-terraform-landingzones-starter" "AL-contoso"
+  # set_clone_exports "${walkthrough_path}/configuration" "/configuration" "2" "Azure/caf-terraform-landingzones-starter" "starter"
   # set_clone_exports "${walkthrough_path}/configuration" "/configuration" "2" "davesee/caf-terraform-landingzones-starter" "walkthrough"
+  # clone_repository
+
+  set_clone_exports "${walkthrough_path}/enterprise_scale" "/enterprise_scale" "2" "Azure/caf-terraform-landingzones-starter" "AL-contoso"
   clone_repository
+
+  set_clone_exports "${walkthrough_path}/templates" "/templates" "2" "Azure/caf-terraform-landingzones-starter" "AL-contoso"
+  clone_repository
+
+  echo_section_break
+}
+
+function generate_config {
+  echo "Create platform configuration using ansible templates."
+  echo -n "Ready to proceed? (y/n): "
+  read proceed
+  check_exit_case $proceed
+
+  ansible-playbook /tf/caf/walkthrough/templates/platform/e2e.yaml \
+  -e base_templates_folder=/tf/caf/walkthrough/templates/platform \
+  -e config_folder=/tf/caf/walkthrough/enterprise_scale/contoso/platform \
+  -e destination_install_path=/tf/caf/walkthrough \
+  -e scenario=contoso \
+  -e model=demo
+
+  mv configuration ./walkthrough/configuration
+
   echo_section_break
 }
 
 function select_walkthrough_config {
-  echo "The following configurations were found in the starter repo. Currenlty ONLY demo works with the walkthrough."
+  echo "The following configurations were found in the starter repo. Currenlty ONLY contoso works with the walkthrough."
   echo "This was accomplished by standardizing the tfstate file names to match the containing folder name."
   d=$(pwd)
   cd ${walkthrough_path}/configuration/
@@ -87,7 +114,7 @@ function select_walkthrough_config {
   echo ""
 
   config=""
-  echo -n "Enter 'demo' to confirm this configuration: "
+  echo -n "Enter 'contoso' to confirm this configuration: "
 
   while [ -z $config ]; do
     read config
